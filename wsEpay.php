@@ -19,7 +19,11 @@ class wsEpay
         }
         return $this;
     }
-
+    /**
+     * @param $transactionId The transaction id of this request
+     * @return bool|Object
+     * @throws EpayResponseException Thrown if we couldn't find the transaction. (gettransactionResult == false)
+     */
     public function getTransactionInformation($transactionId) {
         try
         {
@@ -28,15 +32,27 @@ class wsEpay
 
             );
             $params = array_merge($this->api_params,$params);
-            return $this->client->gettransaction($params);
+            $transaction =  $this->client->gettransaction($params);
+            if($transaction->gettransactionResult == false) {
+                throw new EpayResponseException('Epay Response',$transaction->epayresponse);
+            } else {
+                return $transaction;
+            }
         }
-        catch (Exception $e)
+        catch (\SoapFault $e)
         {
             $this->error = __METHOD__ . ': ' . $e->getMessage();
             return false;
         }
     }
+    /**
 
+     * @param $transactionId The transaction id for the current request.
+     * @param $amount The amount to caputre/
+     * @param null $group optional parameter group
+     * @return bool|Object Returns false if there was a SoapFault, and an Object otherwise.
+     * @throws EpayException|EpayPbsResponseException|EpayResponseException These are thrown with regards to the error codes, use $e->getCode() to get the error code. In case of an EpayException, we don't know what happened!
+     */
     public function capture($transactionId, $amount, $group = null) {
         try
         {
@@ -49,16 +65,26 @@ class wsEpay
                 $params = array_merge(array('group' => $group, $params));
             }
             $params = array_merge($this->api_params,$params);
-            return $this->client->capture($params);
+            $capture =  $this->client->capture($params);
+            if($capture->captureResult == false) {
+                if($capture->epayresponse != 0) {
+                    throw new EpayResponseException('Epay Response',$capture->epayresponse);
+                } else if ($capture->pbsResponse != 0) {
+                    throw new EpayPbsResponseException('Pbs Response',$capture->pbsResponse);
+                } else {
+                    throw new EpayException('Unknown',0);
+                }
+            }
+            return $capture;
         }
-        catch (Exception $e)
+        catch (\SoapFault $e)
         {
             $this->error = __METHOD__ . ': ' . $e->getMessage();
             return false;
         }
     }
-
-
-
-
 }
+
+class EpayException extends \Exception {}
+class EpayPbsResponseException extends EpayException {};
+class EpayResponseException extends \EpayException {};
