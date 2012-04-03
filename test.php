@@ -21,12 +21,26 @@ class WsEpayTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($transaction->gettransactionResult, "Transaction failed");
     }
 
+    public function testCaptureTooHighAmount() {
+        $transactId = 9578868;
+        $amount = 1000000;
+        try {
+            $transaction = $this->wsEpay->capture($transactId,$amount);
+
+            if(!$transaction) {
+                $this->fail($this->wsEpay->error);
+            }
+        } catch( \EpayResponseException $e) {
+            $this->assertNotEquals($e->getCode(),-1021, "Please wait 15 minutes");
+        }
+    }
+
     /**
      * @expectedException EpayResponseException
      */
     public function testGetTransactionInformationNonExistingTransaction() {
         $transactId = 3423143242;
-        
+
         $transaction = $this->wsEpay->getTransactionInformation($transactId);
         if(!$transaction) {
             $this->fail($this->wsEpay->error);
@@ -47,4 +61,13 @@ class WsEpayTest extends PHPUnit_Framework_TestCase
         $this->assertObjectHasAttribute('captureResult',$capture,"We didn't get a properly formatted response");
         $this->assertFalse($capture->captureResult, "The capture was successfull.");
     }
+
+   /* private function assertNotEquals($o1,$o2) {
+        $this->assertThat(
+            $o1,
+            $this->logicalNot(
+                $this->equalTo($o2)
+            )
+        );
+    } */
 }
