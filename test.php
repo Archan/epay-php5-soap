@@ -2,11 +2,11 @@
 
 class wsEpayTest extends PHPUnit_Framework_TestCase
 {
-    /** wsEpay */
+    /** WsEpay */
     private $wsEpay = null;
     protected function setUp()
     {
-        require_once __DIR__ . '/wsEpay.php';
+        require_once __DIR__ . '/WsEpay.php';
         $merchantnumber = 8008627;
         $this->wsEpay = new wsEpay($merchantnumber);
     }
